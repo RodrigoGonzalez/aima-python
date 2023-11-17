@@ -23,7 +23,7 @@ def test_count():
     assert count([1, 2, 3, 4, 2, 3, 4]) == 7
     assert count("aldpeofmhngvia") == 14
     assert count([True, False, True, True, False]) == 3
-    assert count([5 > 1, len("abc") == 3, 3+1 == 5]) == 2
+    assert count([5 > 1, len("abc") == 3, 3 == 4]) == 2
 
 
 def test_product():
@@ -180,7 +180,7 @@ def test_weighted_choice():
 
 
 def compare_list(x, y):
-    return all([elm_x == y[i] for i, elm_x in enumerate(x)])
+    return all(elm_x == y[i] for i, elm_x in enumerate(x))
 
 
 def test_distance():
@@ -255,28 +255,26 @@ def test_expr():
     assert (expr('GP(x, z) <== P(x, y) & P(y, z)')
             == Expr('<==', GP(x, z), P(x, y) & P(y, z)))
 
-def test_FIFOQueue() :
+def test_FIFOQueue():
     # Create an object
     queue = FIFOQueue()
     # Generate an array of number to be used for testing
-    test_data = [ random.choice(range(100)) for i in range(100) ]
+    test_data = [random.choice(range(100)) for _ in range(100)]
     # Index of the element to be added in the queue
     front_head = 0
     # Index of the element to be removed from the queue
     back_head = 0
-    while front_head < 100 or back_head < 100 :
-        if front_head == 100 : # only possible to remove
+    while front_head < 100 or back_head < 100:
+        if (
+            front_head == 100
+            or front_head != 100
+            and back_head != front_head
+            and random.random() < 0.5
+        ): # only possible to remove
             # check for pop and append method
             assert queue.pop() == test_data[back_head]
             back_head += 1
-        elif back_head == front_head : # only possible to push element into queue
-            queue.append(test_data[front_head])
-            front_head += 1
-        # else do it in a random manner
-        elif random.random() < 0.5 :
-            assert queue.pop() == test_data[back_head]
-            back_head += 1
-        else :
+        else: # only possible to push element into queue
             queue.append(test_data[front_head])
             front_head += 1
         # check for __len__ method
@@ -286,8 +284,8 @@ def test_FIFOQueue() :
             assert random.choice(test_data[back_head:front_head]) in queue
 
     # check extend method
-    test_data1 = [ random.choice(range(100)) for i in range(50) ]
-    test_data2 = [ random.choice(range(100)) for i in range(50) ]
+    test_data1 = [random.choice(range(100)) for _ in range(50)]
+    test_data2 = [random.choice(range(100)) for _ in range(50)]
     # append elements of test data 1
     queue.extend(test_data1)
     # append elements of test data 2

@@ -19,7 +19,7 @@ from collections import defaultdict
 
 
 def euclidean_distance(X, Y):
-    return math.sqrt(sum([(x - y)**2 for x, y in zip(X, Y)]))
+    return math.sqrt(sum((x - y)**2 for x, y in zip(X, Y)))
 
 
 def rms_error(X, Y):
@@ -35,7 +35,7 @@ def mean_error(X, Y):
 
 
 def manhattan_distance(X, Y):
-    return sum([abs(x - y) for x, y in zip(X, Y)])
+    return sum(abs(x - y) for x, y in zip(X, Y))
 
 
 def mean_boolean_error(X, Y):
@@ -86,16 +86,12 @@ class DataSet:
         self.source = source
         self.values = values
         self.distance = distance
-        if values is None:
-            self.got_values_flag = False
-        else:
-            self.got_values_flag = True
-
+        self.got_values_flag = values is not None
         # Initialize .examples from string or list or data directory
         if isinstance(examples, str):
             self.examples = parse_csv(examples)
         elif examples is None:
-            self.examples = parse_csv(open_data(name + '.csv').read())
+            self.examples = parse_csv(open_data(f'{name}.csv').read())
         else:
             self.examples = examples
         # Attrs are the indices of examples, unless otherwise stated.
@@ -146,8 +142,9 @@ class DataSet:
         if self.values:
             for a in self.attrs:
                 if example[a] not in self.values[a]:
-                    raise ValueError('Bad value {} for attribute {} in {}'
-                                     .format(example[a], self.attrnames[a], example))
+                    raise ValueError(
+                        f'Bad value {example[a]} for attribute {self.attrnames[a]} in {example}'
+                    )
 
     def attrnum(self, attr):
         """Returns the number used for attr, which can be a name, or -n .. n-1."""
@@ -201,12 +198,12 @@ class DataSet:
 
         item_buckets = self.split_values_by_classes()
 
-        means = defaultdict(lambda: [0 for i in range(feature_numbers)])
-        deviations = defaultdict(lambda: [0 for i in range(feature_numbers)])
+        means = defaultdict(lambda: [0 for _ in range(feature_numbers)])
+        deviations = defaultdict(lambda: [0 for _ in range(feature_numbers)])
 
         for t in target_names:
             # Find all the item feature values for item in class t
-            features = [[] for i in range(feature_numbers)]
+            features = [[] for _ in range(feature_numbers)]
             for item in item_buckets[t]:
                 features = [features[i] + [item[i]] for i in range(feature_numbers)]
 
@@ -320,7 +317,7 @@ def NaiveBayesSimple(distribution):
     CountingProbDist objects and classifies items according to these distributions.
     The input dictionary is in the following form:
         (ClassName, ClassProb): CountingProbDist"""
-    target_dist = {c_name: prob for c_name, prob in distribution.keys()}
+    target_dist = dict(distribution.keys())
     attr_dists = {c_name: count_prob for (c_name, _), count_prob in distribution.items()}
 
     def predict(example):
@@ -684,7 +681,7 @@ def NeuralNetLearner(dataset, hidden_layer_sizes=[3],
 
 
 def random_weights(min_value, max_value, num_weights):
-    return [random.uniform(min_value, max_value) for i in range(num_weights)]
+    return [random.uniform(min_value, max_value) for _ in range(num_weights)]
 
 
 def BackPropagationLearner(dataset, net, learning_rate, epochs):
@@ -710,7 +707,7 @@ def BackPropagationLearner(dataset, net, learning_rate, epochs):
 
     inputs, targets = init_examples(examples, idx_i, idx_t, o_units)
 
-    for epoch in range(epochs):
+    for _ in range(epochs):
         # Iterate over each example
         for e in range(len(examples)):
             i_val = inputs[e]
@@ -728,7 +725,7 @@ def BackPropagationLearner(dataset, net, learning_rate, epochs):
                     node.value = node.activation(in_val)
 
             # Initialize delta
-            delta = [[] for i in range(n_layers)]
+            delta = [[] for _ in range(n_layers)]
 
             # Compute outer layer delta
 
@@ -808,8 +805,7 @@ def network(input_units, hidden_layer_sizes, output_units):
     else:
         layers_sizes = [input_units] + [output_units]
 
-    net = [[NNUnit() for n in range(size)]
-           for size in layers_sizes]
+    net = [[NNUnit() for _ in range(size)] for size in layers_sizes]
     n_layers = len(net)
 
     # Make Connection
@@ -997,10 +993,9 @@ def err_ratio(predict, dataset, examples=None, verbose=0):
         if output == desired:
             right += 1
             if verbose >= 2:
-                print('   OK: got {} for {}'.format(desired, example))
+                print(f'   OK: got {desired} for {example}')
         elif verbose:
-            print('WRONG: got {}, expected {} for {}'.format(
-                output, desired, example))
+            print(f'WRONG: got {output}, expected {desired} for {example}')
     return 1 - (right / len(examples))
 
 
@@ -1030,7 +1025,7 @@ def cross_validation(learner, size, dataset, k=10, trials=1):
     if trials > 1:
         trial_errT = 0
         trial_errV = 0
-        for t in range(trials):
+        for _ in range(trials):
             errT, errV = cross_validation(learner, size, dataset,
                                           k=10, trials=1)
             trial_errT += errT
@@ -1177,8 +1172,8 @@ def Majority(k, n):
     """Return a DataSet with n k-bit examples of the majority problem:
     k random bits followed by a 1 if more than half the bits are 1, else 0."""
     examples = []
-    for i in range(n):
-        bits = [random.choice([0, 1]) for i in range(k)]
+    for _ in range(n):
+        bits = [random.choice([0, 1]) for _ in range(k)]
         bits.append(int(sum(bits) > k / 2))
         examples.append(bits)
     return DataSet(name="majority", examples=examples)
@@ -1188,8 +1183,8 @@ def Parity(k, n, name="parity"):
     """Return a DataSet with n k-bit examples of the parity problem:
     k random bits followed by a 1 if an odd number of bits are 1, else 0."""
     examples = []
-    for i in range(n):
-        bits = [random.choice([0, 1]) for i in range(k)]
+    for _ in range(n):
+        bits = [random.choice([0, 1]) for _ in range(k)]
         bits.append(sum(bits) % 2)
         examples.append(bits)
     return DataSet(name=name, examples=examples)
@@ -1203,8 +1198,8 @@ def Xor(n):
 def ContinuousXor(n):
     "2 inputs are chosen uniformly from (0.0 .. 2.0]; output is xor of ints."
     examples = []
-    for i in range(n):
-        x, y = [random.uniform(0.0, 2.0) for i in '12']
+    for _ in range(n):
+        x, y = [random.uniform(0.0, 2.0) for _ in '12']
         examples.append([x, y, int(x) != int(y)])
     return DataSet(name="continuous xor", examples=examples)
 
@@ -1218,7 +1213,12 @@ def compare(algorithms=[PluralityLearner, NaiveBayesLearner,
             k=10, trials=1):
     """Compare various learners on various datasets using cross-validation.
     Print results as a table."""
-    print_table([[a.__name__.replace('Learner', '')] +
-                 [cross_validation(a, d, k, trials) for d in datasets]
-                 for a in algorithms],
-                header=[''] + [d.name[0:7] for d in datasets], numfmt='%.2f')
+    print_table(
+        [
+            [a.__name__.replace('Learner', '')]
+            + [cross_validation(a, d, k, trials) for d in datasets]
+            for a in algorithms
+        ],
+        header=[''] + [d.name[:7] for d in datasets],
+        numfmt='%.2f',
+    )

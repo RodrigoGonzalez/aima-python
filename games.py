@@ -137,7 +137,7 @@ def query_player(game, state):
     """Make a move by querying standard input."""
     print("current state:")
     game.display(state)
-    print("available moves: {}".format(game.actions(state)))
+    print(f"available moves: {game.actions(state)}")
     print("")
     move_string = input('Your move? ')
     try:
@@ -194,7 +194,7 @@ class Game:
         print(state)
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return f'<{self.__class__.__name__}>'
 
     def play_game(self, *players):
         """Play an n-person, move-alternating game."""
@@ -225,10 +225,7 @@ class Fig52Game(Game):
         return self.succs[state][move]
 
     def utility(self, state, player):
-        if player == 'MAX':
-            return self.utils[state]
-        else:
-            return -self.utils[state]
+        return self.utils[state] if player == 'MAX' else -self.utils[state]
 
     def terminal_test(self, state):
         return state not in ('A', 'B', 'C', 'D')
@@ -250,10 +247,7 @@ class Fig52Extended(Game):
         return self.succs[state][move]
 
     def utility(self, state, player):
-        if player == 'MAX':
-            return self.utils[state]
-        else:
-            return -self.utils[state]
+        return self.utils[state] if player == 'MAX' else -self.utils[state]
 
     def terminal_test(self, state):
         return state not in range(13)

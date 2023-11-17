@@ -92,11 +92,10 @@ class CSP(search.Problem):
         assignments to an unassigned variable."""
         if len(state) == len(self.variables):
             return []
-        else:
-            assignment = dict(state)
-            var = first([v for v in self.variables if v not in assignment])
-            return [(var, val) for val in self.domains[var]
-                    if self.nconflicts(var, val, assignment) == 0]
+        assignment = dict(state)
+        var = first([v for v in self.variables if v not in assignment])
+        return [(var, val) for val in self.domains[var]
+                if self.nconflicts(var, val, assignment) == 0]
 
     def result(self, state, action):
         """Perform an action and return the new state."""
@@ -138,8 +137,11 @@ class CSP(search.Problem):
     def infer_assignment(self):
         """Return the partial assignment implied by the current inferences."""
         self.support_pruning()
-        return {v: self.curr_domains[v][0]
-                for v in self.variables if 1 == len(self.curr_domains[v])}
+        return {
+            v: self.curr_domains[v][0]
+            for v in self.variables
+            if len(self.curr_domains[v]) == 1
+        }
 
     def restore(self, removals):
         """Undo a supposition and all inferences from it."""
@@ -285,7 +287,7 @@ def min_conflicts(csp, max_steps=100000):
         val = min_conflicts_value(csp, var, current)
         csp.assign(var, val, current)
     # Now repeatedly choose a random conflicted variable and change it
-    for i in range(max_steps):
+    for _ in range(max_steps):
         conflicted = csp.conflicted_vars(current)
         if not conflicted:
             return current
@@ -306,7 +308,6 @@ def min_conflicts_value(csp, var, current):
 
 def tree_csp_solver(csp):
     """[Figure 6.11]"""
-    assignment = {}
     root = csp.variables[0]
     X, parent = topological_sort(csp, root)
 
@@ -315,7 +316,7 @@ def tree_csp_solver(csp):
         if not make_arc_consistent(parent[Xj], Xj, csp):
             return None
 
-    assignment[root] = csp.curr_domains[root][0]
+    assignment = {root: csp.curr_domains[root][0]}
     for Xi in X[1:]:
         assignment[Xi] = assign_value(parent[Xi], Xi, csp, assignment)
         if not assignment[Xi]:
@@ -367,13 +368,7 @@ def make_arc_consistent(Xj, Xk, csp):
     by removing the possible values of Xj that cause inconsistencies."""
     #csp.curr_domains[Xj] = []
     for val1 in csp.domains[Xj]:
-        keep = False # Keep or remove val1
-        for val2 in csp.domains[Xk]:
-            if csp.constraints(Xj, val1, Xk, val2):
-                # Found a consistent assignment for val1, keep it
-                keep = True
-                break
-        
+        keep = any(csp.constraints(Xj, val1, Xk, val2) for val2 in csp.domains[Xk])
         if not keep:
             # Remove val1
             csp.prune(Xj, val1, None)
@@ -385,12 +380,14 @@ def assign_value(Xj, Xk, csp, assignment):
     """Assign a value to Xk given Xj's (Xk's parent) assignment.
     Return the first value that satisfies the constraints."""
     parent_assignment = assignment[Xj]
-    for val in csp.curr_domains[Xk]:
-        if csp.constraints(Xj, parent_assignment, Xk, val):
-            return val
-
-    # No consistent assignment available
-    return None
+    return next(
+        (
+            val
+            for val in csp.curr_domains[Xk]
+            if csp.constraints(Xj, parent_assignment, Xk, val)
+        ),
+        None,
+    )
 
 # ______________________________________________________________________________
 # Map-Coloring Problems
@@ -552,10 +549,7 @@ class NQueensCSP(CSP):
                 print(ch, end=' ')
             print('    ', end=' ')
             for var in range(n):
-                if assignment.get(var, '') == val:
-                    ch = '*'
-                else:
-                    ch = ' '
+                ch = '*' if assignment.get(var, '') == val else ' '
                 print(str(self.nconflicts(var, val, assignment)) + ch, end=' ')
             print()
 
@@ -572,7 +566,7 @@ harder1 = '4173698.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2..
 
 _R3 = list(range(3))
 _CELL = itertools.count().__next__
-_BGRID = [[[[_CELL() for x in _R3] for y in _R3] for bx in _R3] for by in _R3]
+_BGRID = [[[[_CELL() for _ in _R3] for _ in _R3] for _ in _R3] for _ in _R3]
 _BOXES = flatten([list(map(flatten, brow)) for brow in _BGRID])
 _ROWS = flatten([list(map(flatten, zip(*brow))) for brow in _BGRID])
 _COLS = list(zip(*_ROWS))

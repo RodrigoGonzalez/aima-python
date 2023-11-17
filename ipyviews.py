@@ -53,11 +53,11 @@ class ContinuousWorldView:
         return NotImplementedError
 
     def get_polygon_obstacles_coordinates(self):
-        obstacle_coordiantes = []
-        for thing in self.world.things:
-            if isinstance(thing, PolygonObstacle):
-                obstacle_coordiantes.append(thing.coordinates)
-        return obstacle_coordiantes
+        return [
+            thing.coordinates
+            for thing in self.world.things
+            if isinstance(thing, PolygonObstacle)
+        ]
 
     def show(self):
         clear_output()
@@ -141,7 +141,7 @@ class GridWorldView:
             row, column = thing.location
             thing_class_name = thing.__class__.__name__
             if thing_class_name not in self.representation:
-                raise KeyError('Representation not found for {}'.format(thing_class_name))
+                raise KeyError(f'Representation not found for {thing_class_name}')
             world_map[row][column]["val"] = thing.__class__.__name__
 
         for location, label in self.labels.items():
