@@ -83,10 +83,7 @@ class PassiveTDAgent:
         self.gamma = mdp.gamma
         self.terminals = mdp.terminals
 
-        if alpha:
-            self.alpha = alpha
-        else:
-            self.alpha = lambda n: 1./(1+n)  # udacity video
+        self.alpha = alpha if alpha else (lambda n: 1./(1+n))
 
     def __call__(self, percept):
         s1, r1 = self.update_state(percept)
@@ -127,27 +124,18 @@ class QLearningAgent:
         self.a = None
         self.r = None
 
-        if alpha:
-            self.alpha = alpha
-        else:
-            self.alpha = lambda n: 1./(1+n)  # udacity video
+        self.alpha = alpha if alpha else (lambda n: 1./(1+n))
 
     def f(self, u, n):
         """ Exploration function. Returns fixed Rplus until
         agent has visited state, action a Ne number of times.
         Same as ADP agent in book."""
-        if n < self.Ne:
-            return self.Rplus
-        else:
-            return u
+        return self.Rplus if n < self.Ne else u
 
     def actions_in_state(self, state):
         """ Returns actions possible in given state.
             Useful for max and argmax. """
-        if state in self.terminals:
-            return [None]
-        else:
-            return self.all_act
+        return [None] if state in self.terminals else self.all_act
 
     def __call__(self, percept):
         s1, r1 = self.update_state(percept)

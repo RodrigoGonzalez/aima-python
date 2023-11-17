@@ -165,7 +165,7 @@ def matrix_multiplication(X_M, *Y_M):
 def vector_to_diagonal(v):
     """Converts a vector to a diagonal matrix with vector elements
     as the diagonal elements of the matrix"""
-    diag_matrix = [[0 for i in range(len(v))] for j in range(len(v))]
+    diag_matrix = [[0 for _ in range(len(v))] for _ in range(len(v))]
     for i in range(len(v)):
         diag_matrix[i][i] = v[i]
 
@@ -193,9 +193,9 @@ def inverse_matrix(X):
     assert len(X[0]) == 2
     det = X[0][0] * X[1][1] - X[0][1] * X[1][0]
     assert det != 0
-    inv_mat = scalar_matrix_product(1.0/det, [[X[1][1], -X[0][1]], [-X[1][0], X[0][0]]])
-
-    return inv_mat
+    return scalar_matrix_product(
+        1.0 / det, [[X[1][1], -X[0][1]], [-X[1][0], X[0][0]]]
+    )
 
 
 def probability(p):
@@ -215,9 +215,7 @@ def weighted_sample_with_replacement(n, seq, weights):
 def weighted_sampler(seq, weights):
     """Return a random-sample function that picks from seq weighted by weights."""
     totals = []
-    for w in weights:
-        totals.append(w + totals[-1] if totals else w)
-
+    totals.extend(w + totals[-1] if totals else w for w in weights)
     return lambda: seq[bisect.bisect(totals, random.uniform(0, totals[-1]))]
 
 
@@ -225,9 +223,8 @@ def rounder(numbers, d=4):
     """Round a single number, or sequence of numbers, to d decimal places."""
     if isinstance(numbers, (int, float)):
         return round(numbers, d)
-    else:
-        constructor = type(numbers)     # Can be list, set, tuple, etc.
-        return constructor(rounder(n, d) for n in numbers)
+    constructor = type(numbers)     # Can be list, set, tuple, etc.
+    return constructor(rounder(n, d) for n in numbers)
 
 
 def num_or_str(x):
@@ -256,7 +253,7 @@ def normalize(dist):
 
 def norm(X, n=2):
     """Return the n-norm of vector X"""
-    return sum([x**n for x in X])**(1/n)
+    return sum(x**n for x in X)**(1/n)
 
 
 def clip(x, lowest, highest):
@@ -357,10 +354,10 @@ def memoize(fn, slot=None, maxsize=32):
         def memoized_fn(obj, *args):
             if hasattr(obj, slot):
                 return getattr(obj, slot)
-            else:
-                val = fn(obj, *args)
-                setattr(obj, slot, val)
-                return val
+            val = fn(obj, *args)
+            setattr(obj, slot, val)
+            return val
+
     else:
         @functools.lru_cache(maxsize=maxsize)
         def memoized_fn(*args):
@@ -557,13 +554,13 @@ class Expr(object):
     def __repr__(self):
         op = self.op
         args = [str(arg) for arg in self.args]
-        if op.isidentifier():       # f(x) or f(x, y)
-            return '{}({})'.format(op, ', '.join(args)) if args else op
+        if op.isidentifier():   # f(x) or f(x, y)
+            return f"{op}({', '.join(args)})" if args else op
         elif len(args) == 1:        # -x or -(x + 1)
             return op + args[0]
-        else:                       # (x - y)
-            opp = (' ' + op + ' ')
-            return '(' + opp.join(args) + ')'
+        else:                   # (x - y)
+            opp = f' {op} '
+            return f'({opp.join(args)})'
 
 # An 'Expression' is either an Expr or a Number.
 # Symbol is not an explicit type; it is any Expr with 0 args.
@@ -593,10 +590,7 @@ def subexpressions(x):
 
 def arity(expression):
     """The number of sub-expressions in this expression."""
-    if isinstance(expression, Expr):
-        return len(expression.args)
-    else:  # expression is a number
-        return 0
+    return len(expression.args) if isinstance(expression, Expr) else 0
 
 # For operators that are not defined in Python, we allow new InfixOps:
 
@@ -610,7 +604,7 @@ class PartialExpr:
         return Expr(self.op, self.lhs, rhs)
 
     def __repr__(self):
-        return "PartialExpr('{}', {})".format(self.op, self.lhs)
+        return f"PartialExpr('{self.op}', {self.lhs})"
 
 
 def expr(x):
@@ -636,7 +630,7 @@ def expr_handle_infix_ops(x):
     "P |'==>'| Q"
     """
     for op in infix_ops:
-        x = x.replace(op, '|' + repr(op) + '|')
+        x = x.replace(op, f'|{repr(op)}|')
     return x
 
 
@@ -763,10 +757,7 @@ class PriorityQueue(Queue):
         return len(self.A)
 
     def pop(self):
-        if self.order == min:
-            return self.A.pop(0)[1]
-        else:
-            return self.A.pop()[1]
+        return self.A.pop(0)[1] if self.order == min else self.A.pop()[1]
 
     def __contains__(self, item):
         return any(item == pair[1] for pair in self.A)

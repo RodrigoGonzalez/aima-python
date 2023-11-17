@@ -115,11 +115,11 @@ def test_job_shop_problem():
 
     assert p.goal_test()
 
-def test_refinements() :
+def test_refinements():
     init = [expr('At(Home)')]
     def goal_test(kb):
         return kb.ask(expr('At(SFO)'))
-        
+
     library = {"HLA": ["Go(Home,SFO)","Taxi(Home, SFO)"],
     "steps": [["Taxi(Home, SFO)"],[]],
     "precond_pos": [["At(Home)"],["At(Home)"]],
@@ -141,7 +141,7 @@ def test_refinements() :
     taxi_SFO = HLA(expr("Go(Home,SFO)"),
                       [precond_pos, precond_neg], [effect_add, effect_rem])
     prob = Problem(init, [go_SFO, taxi_SFO], goal_test)
-    result = [i for i in Problem.refinements(go_SFO, prob, library)]
+    result = list(Problem.refinements(go_SFO, prob, library))
     assert(len(result) == 1)
     assert(result[0].name == "Taxi")
     assert(result[0].args == (expr("Home"), expr("SFO")))

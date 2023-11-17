@@ -427,7 +427,7 @@ def on_click():
     '''
     global algo, counter, next_button, romania_problem, start, goal
     romania_problem = GraphProblem(start.get(), goal.get(), romania_map)
-    if "Breadth-First Tree Search" == algo.get():
+    if algo.get() == "Breadth-First Tree Search":
         node = breadth_first_tree_search(romania_problem)
         if node is not None:
             final_path = bfts(romania_problem).solution()
@@ -435,7 +435,7 @@ def on_click():
             display_final(final_path)
             next_button.config(state="disabled")
         counter += 1
-    elif "Depth-First Tree Search" == algo.get():
+    elif algo.get() == "Depth-First Tree Search":
         node = depth_first_tree_search(romania_problem)
         if node is not None:
             final_path = dfts(romania_problem).solution()
@@ -443,7 +443,7 @@ def on_click():
             display_final(final_path)
             next_button.config(state="disabled")
         counter += 1
-    elif "Depth-First Graph Search" == algo.get():
+    elif algo.get() == "Depth-First Graph Search":
         node = depth_first_graph_search(romania_problem)
         if node is not None:
             print(node)

@@ -253,8 +253,13 @@ def test_fol_bc_ask():
         test_variables = variables(q)
         answers = fol_bc_ask(kb or test_kb, q)
         return sorted(
-            [dict((x, v) for x, v in list(a.items()) if x in test_variables)
-             for a in answers], key=repr)
+            [
+                {x: v for x, v in list(a.items()) if x in test_variables}
+                for a in answers
+            ],
+            key=repr,
+        )
+
     assert repr(test_ask('Farmer(x)')) == '[{x: Mac}]'
     assert repr(test_ask('Human(x)')) == '[{x: Mac}, {x: MrsMac}]'
     assert repr(test_ask('Rabbit(x)')) == '[{x: MrsRabbit}, {x: Pete}]'
@@ -267,8 +272,13 @@ def test_fol_fc_ask():
         test_variables = variables(q)
         answers = fol_fc_ask(kb or test_kb, q)
         return sorted(
-            [dict((x, v) for x, v in list(a.items()) if x in test_variables)
-             for a in answers], key=repr)
+            [
+                {x: v for x, v in list(a.items()) if x in test_variables}
+                for a in answers
+            ],
+            key=repr,
+        )
+
     assert repr(test_ask('Criminal(x)', crime_kb)) == '[{x: West}]'
     assert repr(test_ask('Enemy(x, America)', crime_kb)) == '[{x: Nono}]'
     assert repr(test_ask('Farmer(x)')) == '[{x: Mac}]'

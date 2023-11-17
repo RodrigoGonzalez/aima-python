@@ -31,9 +31,9 @@ class PDDL:
         args = action.args
         list_action = first(a for a in self.actions if a.name == action_name)
         if list_action is None:
-            raise Exception("Action '{}' not found".format(action_name))
+            raise Exception(f"Action '{action_name}' not found")
         if not list_action.check_precond(self.kb, args):
-            raise Exception("Action '{}' pre-conditions not satisfied".format(action))
+            raise Exception(f"Action '{action}' pre-conditions not satisfied")
         list_action(self.kb, args)
 
 
@@ -77,11 +77,10 @@ class Action:
         for clause in self.precond_pos:
             if self.substitute(clause, args) not in kb.clauses:
                 return False
-        # check for negative clauses
-        for clause in self.precond_neg:
-            if self.substitute(clause, args) in kb.clauses:
-                return False
-        return True
+        return all(
+            self.substitute(clause, args) not in kb.clauses
+            for clause in self.precond_neg
+        )
 
     def act(self, kb, args):
         """Executes the action on the state's kb"""
@@ -110,7 +109,7 @@ def air_cargo():
 
     def goal_test(kb):
         required = [expr('At(C1 , JFK)'), expr('At(C2 ,SFO)')]
-        return all([kb.ask(q) is not False for q in required])
+        return all(kb.ask(q) is not False for q in required)
 
     # Actions
 
@@ -274,36 +273,36 @@ class Level():
         for poseff in self.next_state_links_pos:
             negeff = poseff
             if negeff in self.next_state_links_neg:
-                for a in self.next_state_links_pos[poseff]:
+                for a in self.next_state_links_pos[negeff]:
                     for b in self.next_state_links_neg[negeff]:
-                        if set([a, b]) not in self.mutex:
-                            self.mutex.append(set([a, b]))
+                        if {a, b} not in self.mutex:
+                            self.mutex.append({a, b})
 
         # Interference
         for posprecond in self.current_state_links_pos:
             negeff = posprecond
             if negeff in self.next_state_links_neg:
-                for a in self.current_state_links_pos[posprecond]:
+                for a in self.current_state_links_pos[negeff]:
                     for b in self.next_state_links_neg[negeff]:
-                        if set([a, b]) not in self.mutex:
-                            self.mutex.append(set([a, b]))
+                        if {a, b} not in self.mutex:
+                            self.mutex.append({a, b})
 
         for negprecond in self.current_state_links_neg:
             poseff = negprecond
             if poseff in self.next_state_links_pos:
                 for a in self.next_state_links_pos[poseff]:
-                    for b in self.current_state_links_neg[negprecond]:
-                        if set([a, b]) not in self.mutex:
-                            self.mutex.append(set([a, b]))
+                    for b in self.current_state_links_neg[poseff]:
+                        if {a, b} not in self.mutex:
+                            self.mutex.append({a, b})
 
         # Competing needs
         for posprecond in self.current_state_links_pos:
             negprecond = posprecond
             if negprecond in self.current_state_links_neg:
-                for a in self.current_state_links_pos[posprecond]:
+                for a in self.current_state_links_pos[negprecond]:
                     for b in self.current_state_links_neg[negprecond]:
-                        if set([a, b]) not in self.mutex:
-                            self.mutex.append(set([a, b]))
+                        if {a, b} not in self.mutex:
+                            self.mutex.append({a, b})
 
         # Inconsistent support
         state_mutex = []
@@ -314,7 +313,7 @@ class Level():
             else:
                 next_state_1 = self.next_action_links[list(pair)[0]]
             if (len(next_state_0) == 1) and (len(next_state_1) == 1):
-                state_mutex.append(set([next_state_0[0], next_state_1[0]]))
+                state_mutex.append({next_state_0[0], next_state_1[0]})
 
         self.mutex = self.mutex+state_mutex
 
@@ -329,7 +328,7 @@ class Level():
 
         # Add persistence actions for negative states
         for clause in self.current_state_neg:
-            not_expr = Expr('not'+clause.op, clause.args)
+            not_expr = Expr(f'not{clause.op}', clause.args)
             self.current_action_links_neg[Expr('Persistence', not_expr)] = [clause]
             self.next_action_links[Expr('Persistence', not_expr)] = [clause]
             self.current_state_links_neg[clause] = [Expr('Persistence', not_expr)]
@@ -400,7 +399,11 @@ class Graph:
     def __init__(self, pddl, negkb):
         self.pddl = pddl
         self.levels = [Level(pddl.kb, negkb)]
-        self.objects = set(arg for clause in pddl.kb.clauses + negkb.clauses for arg in clause.args)
+        self.objects = {
+            arg
+            for clause in pddl.kb.clauses + negkb.clauses
+            for arg in clause.args
+        }
 
     def __call__(self):
         self.expand_graph()
@@ -412,10 +415,7 @@ class Graph:
 
     def non_mutex_goals(self, goals, index):
         goal_perm = itertools.combinations(goals, 2)
-        for g in goal_perm:
-            if set(g) in self.levels[index].mutex:
-                return False
-        return True
+        return all(set(g) not in self.levels[index].mutex for g in goal_perm)
 
 
 class GraphPlan:
@@ -447,14 +447,8 @@ class GraphPlan:
 
         level = self.graph.levels[index-1]
 
-        # Create all combinations of actions that satisfy the goal
-        actions = []
-        for goal in goals_pos:
-            actions.append(level.next_state_links_pos[goal])
-
-        for goal in goals_neg:
-            actions.append(level.next_state_links_neg[goal])
-
+        actions = [level.next_state_links_pos[goal] for goal in goals_pos]
+        actions.extend(level.next_state_links_neg[goal] for goal in goals_neg)
         all_actions = list(itertools.product(*actions))
 
         # Filter out the action combinations which contain mutexes
@@ -494,10 +488,7 @@ class GraphPlan:
         for item in self.solution:
             if item[1] == -1:
                 solution.append([])
-                solution[-1].append(item[0])
-            else:
-                solution[-1].append(item[0])
-
+            solution[-1].append(item[0])
         for num, item in enumerate(solution):
             item.reverse()
             solution[num] = item
@@ -588,12 +579,13 @@ class HLA(Action):
         """
         # print(self.name)
         if not self.has_usable_resource(available_resources):
-            raise Exception('Not enough usable resources to execute {}'.format(self.name))
+            raise Exception(f'Not enough usable resources to execute {self.name}')
         if not self.has_consumable_resource(available_resources):
-            raise Exception('Not enough consumable resources to execute {}'.format(self.name))
+            raise Exception(f'Not enough consumable resources to execute {self.name}')
         if not self.inorder(job_order):
-            raise Exception("Can't execute {} - execute prerequisite actions first".
-                            format(self.name))
+            raise Exception(
+                f"Can't execute {self.name} - execute prerequisite actions first"
+            )
         super().act(kb, args)  # update knowledge base
         for resource in self.consumes:  # remove consumed resources
             available_resources[resource] -= self.consumes[resource]
@@ -661,10 +653,10 @@ class Problem(PDDL):
         args = action.args
         list_action = first(a for a in self.actions if a.name == action.name)
         if list_action is None:
-            raise Exception("Action '{}' not found".format(action.name))
+            raise Exception(f"Action '{action.name}' not found")
         list_action.do_action(self.jobs, self.resources, self.kb, args)
 
-    def refinements(hla, state, library):  # TODO - refinements may be (multiple) HLA themselves ...
+    def refinements(self, state, library):    # TODO - refinements may be (multiple) HLA themselves ...
         """
         state is a Problem, containing the current state kb
         library is a dictionary containing details for every possible refinement. eg:
@@ -707,7 +699,7 @@ class Problem(PDDL):
                       ]
         }
         """
-        e = Expr(hla.name, hla.args)
+        e = Expr(self.name, self.args)
         indices = [i for i, x in enumerate(library["HLA"]) if expr(x).op == hla.name]
         for i in indices:
             action = HLA(expr(library["steps"][i][0]), [  # TODO multiple refinements
@@ -721,17 +713,17 @@ class Problem(PDDL):
             if action.check_precond(state.kb, action.args):
                 yield action
 
-    def hierarchical_search(problem, hierarchy):
+    def hierarchical_search(self, hierarchy):
         """
         [Figure 11.5] 'Hierarchical Search, a Breadth First Search implementation of Hierarchical
         Forward Planning Search'
         The problem is a real-world prodlem defined by the problem class, and the hierarchy is
         a dictionary of HLA - refinements (see refinements generator for details)
         """
-        act = Node(problem.actions[0])
+        act = Node(self.actions[0])
         frontier = FIFOQueue()
         frontier.append(act)
-        while(True):
+        while True:
             if not frontier:
                 return None
             plan = frontier.pop()
@@ -740,7 +732,7 @@ class Problem(PDDL):
             prefix = None
             if plan.parent:
                 prefix = plan.parent.state.action  # prefix, suffix = subseq(plan.state, hla)
-            outcome = Problem.result(problem, prefix)
+            outcome = Problem.result(self, prefix)
             if hla is None:
                 if outcome.goal_test():
                     return plan.path()
@@ -750,13 +742,11 @@ class Problem(PDDL):
                     print("...")
                     frontier.append(Node(plan.state, plan.parent, sequence))
 
-    def result(problem, action):
+    def result(self, action):
         """The outcome of applying an action to the current problem"""
         if action is not None:
-            problem.act(action)
-            return problem
-        else:
-            return problem
+            self.act(action)
+        return self
 
 
 def job_shop_problem():

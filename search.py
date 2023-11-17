@@ -95,7 +95,7 @@ class Node:
             self.depth = parent.depth + 1
 
     def __repr__(self):
-        return "<Node {}>".format(self.state)
+        return f"<Node {self.state}>"
 
     def __lt__(self, node):
         return self.state < node.state
@@ -157,9 +157,7 @@ class SimpleProblemSolvingAgentProgram:
             goal = self.formulate_goal(self.state)
             problem = self.formulate_problem(self.state, goal)
             self.seq = self.search(problem)
-            if not self.seq:
-                return None
-        return self.seq.pop(0)
+        return None if not self.seq else self.seq.pop(0)
 
     def update_state(self, percept):
         raise NotImplementedError
@@ -421,10 +419,7 @@ def recursive_best_first_search(problem, h=None):
             best = successors[0]
             if best.f > flimit:
                 return None, best.f
-            if len(successors) > 1:
-                alternative = successors[1].f
-            else:
-                alternative = infinity
+            alternative = successors[1].f if len(successors) > 1 else infinity
             result, best.f = RBFS(problem, best, min(flimit, alternative))
             if result is not None:
                 return result, best.f
@@ -628,9 +623,7 @@ class OnlineSearchProblem(Problem):
         raise NotImplementedError
 
     def goal_test(self, state):
-        if state == self.goal:
-            return True
-        return False
+        return state == self.goal
 
 
 class LRTAStarAgent:
@@ -652,7 +645,6 @@ class LRTAStarAgent:
     def __call__(self, s1):     # as of now s1 is a state rather than a percept
         if self.problem.goal_test(s1):
             self.a = None
-            return self.a
         else:
             if s1 not in self.H:
                 self.H[s1] = self.problem.h(s1)
@@ -668,7 +660,8 @@ class LRTAStarAgent:
                             key=lambda b: self.LRTA_cost(s1, b, self.problem.output(s1, b), self.H))
 
             self.s = s1
-            return self.a
+
+        return self.a
 
     def LRTA_cost(self, s, a, s1, H):
         """Returns cost to move from state 's' to state 's1' plus
@@ -676,13 +669,12 @@ class LRTAStarAgent:
         print(s, a, s1)
         if s1 is None:
             return self.problem.h(s)
-        else:
-            # sometimes we need to get H[s1] which we haven't yet added to H
-            # to replace this try, except: we can initialize H with values from problem.h
-            try:
-                return self.problem.c(s, a, s1) + self.H[s1]
-            except:
-                return self.problem.c(s, a, s1) + self.problem.h(s1)
+        # sometimes we need to get H[s1] which we haven't yet added to H
+        # to replace this try, except: we can initialize H with values from problem.h
+        try:
+            return self.problem.c(s, a, s1) + self.H[s1]
+        except:
+            return self.problem.c(s, a, s1) + self.problem.h(s1)
 
 # ______________________________________________________________________________
 # Genetic Algorithm
@@ -702,12 +694,12 @@ def genetic_search(problem, fitness_fn, ngen=1000, pmut=0.1, n=20):
     return genetic_algorithm(states[:n], problem.value, ngen, pmut)
 
 
-def genetic_algorithm(population, fitness_fn, gene_pool=[0, 1], f_thres=None, ngen=1000, pmut=0.1):  # noqa
+def genetic_algorithm(population, fitness_fn, gene_pool=[0, 1], f_thres=None, ngen=1000, pmut=0.1):    # noqa
     """[Figure 4.8]"""
-    for i in range(ngen):
+    for _ in range(ngen):
         new_population = []
         random_selection = selection_chances(fitness_fn, population)
-        for j in range(len(population)):
+        for _ in range(len(population)):
             x = random_selection()
             y = random_selection()
             child = reproduce(x, y)
@@ -732,8 +724,10 @@ def init_population(pop_number, gene_pool, state_length):
     state_length:  The length of each individual"""
     g = len(gene_pool)
     population = []
-    for i in range(pop_number):
-        new_individual = [gene_pool[random.randrange(0, g)] for j in range(state_length)]
+    for _ in range(pop_number):
+        new_individual = [
+            gene_pool[random.randrange(0, g)] for _ in range(state_length)
+        ]
         population.append(new_individual)
 
     return population
@@ -809,10 +803,7 @@ class Graph:
         .get(a,b) returns the distance or None;
         .get(a) returns a dict of {node: distance} entries, possibly {}."""
         links = self.dict.setdefault(a, {})
-        if b is None:
-            return links
-        else:
-            return links.get(b)
+        return links if b is None else links.get(b)
 
     def nodes(self):
         """Return a list of nodes in the graph."""
@@ -966,8 +957,7 @@ class GraphProblem(Problem):
 
     def h(self, node):
         """h function is straight-line distance from a node's state to goal."""
-        locs = getattr(self.graph, 'locations', None)
-        if locs:
+        if locs := getattr(self.graph, 'locations', None):
             if type(node) is str:
                 return int(distance(locs[node], locs[self.goal]))
 
@@ -1014,10 +1004,9 @@ class NQueensProblem(Problem):
         """In the leftmost empty column, try all non-conflicting rows."""
         if state[-1] is not None:
             return []  # All columns filled; no successors
-        else:
-            col = state.index(None)
-            return [row for row in range(self.N)
-                    if not self.conflicted(state, row, col)]
+        col = state.index(None)
+        return [row for row in range(self.N)
+                if not self.conflicted(state, row, col)]
 
     def result(self, state, row):
         """Place the next queen at the given row."""
@@ -1083,7 +1072,7 @@ def print_boggle(board):
         if board[i] == 'Q':
             print('Qu', end=' ')
         else:
-            print(str(board[i]) + ' ', end=' ')
+            print(f'{str(board[i])} ', end=' ')
     print()
 
 
@@ -1123,7 +1112,7 @@ def boggle_neighbors(n2, cache={}):
 def exact_sqrt(n2):
     """If n2 is a perfect square, return its square root, else raise error."""
     n = int(math.sqrt(n2))
-    assert n * n == n2
+    assert n**2 == n2
     return n
 
 # _____________________________________________________________________________
@@ -1220,7 +1209,7 @@ class BoggleFinder:
 
     def score(self):
         """The total score for the words found, according to the rules."""
-        return sum([self.scores[len(w)] for w in self.words()])
+        return sum(self.scores[len(w)] for w in self.words())
 
     def __len__(self):
         """The number of words found."""

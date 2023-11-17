@@ -89,12 +89,12 @@ def test_simulated_annealing():
     random.seed("aima-python")
     prob = PeakFindingProblem((0, 0), [[0, 5, 10, 20],
                                        [-3, 7, 11, 5]])
-    sols = {prob.value(simulated_annealing(prob)) for i in range(100)}
+    sols = {prob.value(simulated_annealing(prob)) for _ in range(100)}
     assert max(sols) == 20
     prob = PeakFindingProblem((0, 0), [[0, 5, 10, 8],
                                        [-3, 7, 9, 999],
                                        [1, 2, 5, 11]])
-    sols = {prob.value(simulated_annealing(prob)) for i in range(100)}
+    sols = {prob.value(simulated_annealing(prob)) for _ in range(100)}
     assert max(sols) == 999
 
 
@@ -150,13 +150,16 @@ def test_genetic_algorithm():
         return sum(c[n1] != c[n2] for (n1, n2) in edges.values())
 
     solution_chars = GA_GraphColoringChars(edges, fitness)
-    assert solution_chars == ['R', 'G', 'R', 'G'] or solution_chars == ['G', 'R', 'G', 'R']
+    assert solution_chars in [['R', 'G', 'R', 'G'], ['G', 'R', 'G', 'R']]
 
     solution_bools = GA_GraphColoringBools(edges, fitness)
-    assert solution_bools == [True, False, True, False] or solution_bools == [False, True, False, True]
+    assert solution_bools in [
+        [True, False, True, False],
+        [False, True, False, True],
+    ]
 
     solution_ints = GA_GraphColoringInts(edges, fitness)
-    assert solution_ints == [0, 1, 0, 1] or solution_ints == [1, 0, 1, 0]
+    assert solution_ints in [[0, 1, 0, 1], [1, 0, 1, 0]]
 
     # Queens Problem
     gene_pool = range(8)

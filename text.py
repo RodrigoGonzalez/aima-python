@@ -23,7 +23,7 @@ class UnigramWordModel(CountingProbDist):
 
     def samples(self, n):
         """Return a string of n words, random according to the model."""
-        return ' '.join(self.sample() for i in range(n))
+        return ' '.join(self.sample() for _ in range(n))
 
 
 class NgramWordModel(CountingProbDist):
@@ -67,7 +67,7 @@ class NgramWordModel(CountingProbDist):
         n = self.n
         output = list(self.sample())
 
-        for i in range(n, nwords):
+        for _ in range(n, nwords):
             last = output[-n+1:]
             next_word = self.cond_prob[tuple(last)].sample()
             output.append(next_word)
@@ -79,7 +79,7 @@ class NgramCharModel(NgramWordModel):
     def add_sequence(self, words):
         """Add an empty space to every word to catch the beginning of words."""
         for word in words:
-            super().add_sequence(' ' + word)
+            super().add_sequence(f' {word}')
 
 
 class UnigramCharModel(NgramCharModel):
@@ -115,7 +115,7 @@ def viterbi_segment(text, P):
     sequence = []
     i = len(words) - 1
     while i > 0:
-        sequence[0:0] = [words[i]]
+        sequence[:0] = [words[i]]
         i = i - len(words[i])
     # Return sequence of best words and overall probability
     return sequence, best[-1]
@@ -272,18 +272,12 @@ def rot13(plaintext):
 
 def translate(plaintext, function):
     """Translate chars of a plaintext with the given function."""
-    result = ""
-    for char in plaintext:
-        result += function(char)
-    return result
+    return "".join(function(char) for char in plaintext)
 
 
 def maketrans(from_, to_):
     """Create a translation table and return the proper function."""
-    trans_table = {}
-    for n, char in enumerate(from_):
-        trans_table[char] = to_[n]
-
+    trans_table = {char: to_[n] for n, char in enumerate(from_)}
     return lambda char: trans_table.get(char, char)
 
 
@@ -383,9 +377,10 @@ class PermutationDecoder:
 
         # add small positive value to prevent computing log(0)
         # TODO: Modify the values to make score more accurate
-        logP = (sum([log(self.Pwords[word] + 1e-20) for word in words(text)]) +
-                sum([log(self.P1[c] + 1e-5) for c in text]) +
-                sum([log(self.P2[b] + 1e-10) for b in bigrams(text)]))
+        logP = (
+            sum(log(self.Pwords[word] + 1e-20) for word in words(text))
+            + sum(log(self.P1[c] + 1e-5) for c in text)
+        ) + sum(log(self.P2[b] + 1e-10) for b in bigrams(text))
         return -exp(logP)
 
 

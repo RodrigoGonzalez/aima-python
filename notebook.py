@@ -25,11 +25,11 @@ def pseudocode(algorithm):
     from IPython.display import Markdown
 
     algorithm = algorithm.replace(' ', '-')
-    url = "https://raw.githubusercontent.com/aimacode/aima-pseudocode/master/md/{}.md".format(algorithm)
+    url = f"https://raw.githubusercontent.com/aimacode/aima-pseudocode/master/md/{algorithm}.md"
     f = urlopen(url)
     md = f.read().decode('utf-8')
     md = md.split('\n', 1)[-1].strip()
-    md = '#' + md
+    md = f'#{md}'
     return Markdown(md)
 
 
@@ -109,14 +109,13 @@ def load_MNIST(path="aima-data/MNIST/Digits", fashion=False):
     plt.rcParams['image.interpolation'] = 'nearest'
     plt.rcParams['image.cmap'] = 'gray'
 
-    train_img_file = open(os.path.join(path, "train-images-idx3-ubyte"), "rb")
-    train_lbl_file = open(os.path.join(path, "train-labels-idx1-ubyte"), "rb")
-    test_img_file = open(os.path.join(path, "t10k-images-idx3-ubyte"), "rb")
-    test_lbl_file = open(os.path.join(path, 't10k-labels-idx1-ubyte'), "rb")
+    with open(os.path.join(path, "train-images-idx3-ubyte"), "rb") as train_img_file:
+        train_lbl_file = open(os.path.join(path, "train-labels-idx1-ubyte"), "rb")
+        test_img_file = open(os.path.join(path, "t10k-images-idx3-ubyte"), "rb")
+        test_lbl_file = open(os.path.join(path, 't10k-labels-idx1-ubyte'), "rb")
 
-    magic_nr, tr_size, tr_rows, tr_cols = struct.unpack(">IIII", train_img_file.read(16))
-    tr_img = array.array("B", train_img_file.read())
-    train_img_file.close()
+        magic_nr, tr_size, tr_rows, tr_cols = struct.unpack(">IIII", train_img_file.read(16))
+        tr_img = array.array("B", train_img_file.read())
     magic_nr, tr_size = struct.unpack(">II", train_lbl_file.read(8))
     tr_lbl = array.array("b", train_lbl_file.read())
     train_lbl_file.close()
@@ -127,9 +126,6 @@ def load_MNIST(path="aima-data/MNIST/Digits", fashion=False):
     magic_nr, te_size = struct.unpack(">II", test_lbl_file.read(8))
     te_lbl = array.array("b", test_lbl_file.read())
     test_lbl_file.close()
-
-     #print(len(tr_img), len(tr_lbl), tr_size)
-     #print(len(te_img), len(te_lbl), te_size)
 
     train_img = np.zeros((tr_size, tr_rows*tr_cols), dtype=np.int16)
     train_lbl = np.zeros((tr_size,), dtype=np.int8)
@@ -152,11 +148,7 @@ fashion_classes = ["T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
 
 
 def show_MNIST(labels, images, samples=8, fashion=False):
-    if not fashion:
-        classes = digit_classes
-    else:
-        classes = fashion_classes
-
+    classes = digit_classes if not fashion else fashion_classes
     num_classes = len(classes)
 
     for y, cls in enumerate(classes):
@@ -380,7 +372,7 @@ class Canvas_TicTacToe(Canvas):
                  width=300, height=350, cid=None):
         valid_players = ('human', 'random', 'alphabeta')
         if player_1 not in valid_players or player_2 not in valid_players:
-            raise TypeError("Players must be one of {}".format(valid_players))
+            raise TypeError(f"Players must be one of {valid_players}")
         Canvas.__init__(self, varname, width, height, cid)
         self.ttt = TicTacToe()
         self.state = self.ttt.initial
@@ -434,30 +426,49 @@ class Canvas_TicTacToe(Canvas):
             if utility == 0:
                 self.text_n('Game Draw!', offset, 6/7 + offset)
             else:
-                self.text_n('Player {} wins!'.format("XO"[utility < 0]), offset, 6/7 + offset)
+                self.text_n(f'Player {"XO"[utility < 0]} wins!', offset, 6/7 + offset)
                 # Find the 3 and draw a line
                 self.stroke([255, 0][self.turn], [0, 255][self.turn], 0)
                 for i in range(3):
-                    if all([(i + 1, j + 1) in self.state.board for j in range(3)]) and \
-                       len({self.state.board[(i + 1, j + 1)] for j in range(3)}) == 1:
+                    if (
+                        all((i + 1, j + 1) in self.state.board for j in range(3))
+                        and len(
+                            {self.state.board[(i + 1, j + 1)] for j in range(3)}
+                        )
+                        == 1
+                    ):
                         self.line_n(i/3 + 1/6, offset*6/7, i/3 + 1/6, (1 - offset)*6/7)
-                    if all([(j + 1, i + 1) in self.state.board for j in range(3)]) and \
-                       len({self.state.board[(j + 1, i + 1)] for j in range(3)}) == 1:
+                    if (
+                        all((j + 1, i + 1) in self.state.board for j in range(3))
+                        and len(
+                            {self.state.board[(j + 1, i + 1)] for j in range(3)}
+                        )
+                        == 1
+                    ):
                         self.line_n(offset, (i/3 + 1/6)*6/7, 1 - offset, (i/3 + 1/6)*6/7)
-                if all([(i + 1, i + 1) in self.state.board for i in range(3)]) and \
-                   len({self.state.board[(i + 1, i + 1)] for i in range(3)}) == 1:
-                        self.line_n(offset, offset*6/7, 1 - offset, (1 - offset)*6/7)
-                if all([(i + 1, 3 - i) in self.state.board for i in range(3)]) and \
-                   len({self.state.board[(i + 1, 3 - i)] for i in range(3)}) == 1:
-                        self.line_n(offset, (1 - offset)*6/7, 1 - offset, offset*6/7)
+                if (
+                    all((i + 1, i + 1) in self.state.board for i in range(3))
+                    and len({self.state.board[(i + 1, i + 1)] for i in range(3)})
+                    == 1
+                ):
+                    self.line_n(offset, offset*6/7, 1 - offset, (1 - offset)*6/7)
+                if (
+                    all((i + 1, 3 - i) in self.state.board for i in range(3))
+                    and len({self.state.board[(i + 1, 3 - i)] for i in range(3)})
+                    == 1
+                ):
+                    self.line_n(offset, (1 - offset)*6/7, 1 - offset, offset*6/7)
             # restart button
             self.fill(0, 0, 255)
             self.rect_n(0.5 + offset, 6/7, 0.4, 1/8)
             self.fill(0, 0, 0)
             self.text_n('Restart', 0.5 + 2*offset, 13/14)
         else:  # Print which player's turn it is
-            self.text_n("Player {}'s move({})".format("XO"[self.turn], self.players[self.turn]),
-                        offset, 6/7 + offset)
+            self.text_n(
+                f"""Player {"XO"[self.turn]}'s move({self.players[self.turn]})""",
+                offset,
+                6 / 7 + offset,
+            )
 
         self.update()
 
@@ -478,7 +489,7 @@ class Canvas_minimax(Canvas):
     """Minimax for Fig52Extended on HTML canvas"""
     def __init__(self, varname, util_list, width=800, height=600, cid=None):
         Canvas.__init__(self, varname, width, height, cid)
-        self.utils = {node:util for node, util in zip(range(13, 40), util_list)}
+        self.utils = dict(zip(range(13, 40), util_list))
         self.game = Fig52Extended()
         self.game.utils = self.utils
         self.nodes = list(range(40))
@@ -492,7 +503,7 @@ class Canvas_minimax(Canvas):
                                        self.l/2 + (self.l + (1 - 5*self.l)/3)*i)
         self.font("12px Arial")
         self.node_stack = []
-        self.explored = {node for node in self.utils}
+        self.explored = set(self.utils)
         self.thick_lines = set()
         self.change_list = []
         self.draw_graph()
@@ -601,7 +612,7 @@ class Canvas_alphabeta(Canvas):
     """Alpha-beta pruning for Fig52Extended on HTML canvas"""
     def __init__(self, varname, util_list, width=800, height=600, cid=None):
         Canvas.__init__(self, varname, width, height, cid)
-        self.utils = {node:util for node, util in zip(range(13, 40), util_list)}
+        self.utils = dict(zip(range(13, 40), util_list))
         self.game = Fig52Extended()
         self.game.utils = self.utils
         self.nodes = list(range(40))
@@ -615,7 +626,7 @@ class Canvas_alphabeta(Canvas):
                                        3*self.l/2 + (self.l + (1 - 6*self.l)/3)*i)
         self.font("12px Arial")
         self.node_stack = []
-        self.explored = {node for node in self.utils}
+        self.explored = set(self.utils)
         self.pruned = set()
         self.ab = {}
         self.thick_lines = set()

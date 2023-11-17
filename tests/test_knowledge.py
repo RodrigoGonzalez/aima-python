@@ -9,28 +9,19 @@ def test_current_best_learning():
     examples = restaurant
     hypothesis = [{'Alt': 'Yes'}]
     h = current_best_learning(examples, hypothesis)
-    values = []
-    for e in examples:
-        values.append(guess_value(e, h))
-
+    values = [guess_value(e, h) for e in examples]
     assert values == [True, False, True, True, False, True, False, True, False, False, False, True]
 
     examples = animals_umbrellas
     initial_h = [{'Species': 'Cat'}]
     h = current_best_learning(examples, initial_h)
-    values = []
-    for e in examples:
-        values.append(guess_value(e, h))
-
+    values = [guess_value(e, h) for e in examples]
     assert values == [True, True, True, False, False, False, True]
 
     examples = party
     initial_h = [{'Pizza': 'Yes'}]
     h = current_best_learning(examples, initial_h)
-    values = []
-    for e in examples:
-        values.append(guess_value(e, h))
-
+    values = [guess_value(e, h) for e in examples]
     assert values == [True, True, False]
 
 
@@ -38,12 +29,7 @@ def test_version_space_learning():
     V = version_space_learning(party)
     results = []
     for e in party:
-        guess = False
-        for h in V:
-            if guess_value(e, h):
-                guess = True
-                break
-
+        guess = any(guess_value(e, h) for h in V)
         results.append(guess)
 
     assert results == [True, True, False]
@@ -62,10 +48,12 @@ def test_extend_example():
     assert list(test_network.extend_example({x: A, y: B}, expr('Conn(x, z)'))) == [
         {x: A, y: B, z: B}, {x: A, y: B, z: D}]
     assert list(test_network.extend_example({x: G}, expr('Conn(x, y)'))) == [{x: G, y: I}]
-    assert list(test_network.extend_example({x: C}, expr('Conn(x, y)'))) == []
+    assert not list(test_network.extend_example({x: C}, expr('Conn(x, y)')))
     assert len(list(test_network.extend_example({}, expr('Conn(x, y)')))) == 10
     assert len(list(small_family.extend_example({x: expr('Andrew')}, expr('Father(x, y)')))) == 2
-    assert len(list(small_family.extend_example({x: expr('Andrew')}, expr('Mother(x, y)')))) == 0
+    assert not list(
+        small_family.extend_example({x: expr('Andrew')}, expr('Mother(x, y)'))
+    )
     assert len(list(small_family.extend_example({x: expr('Andrew')}, expr('Female(y)')))) == 6
 
 

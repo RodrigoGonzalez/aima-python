@@ -52,8 +52,10 @@ def test_csp_actions():
     assert map_coloring_test.actions(state) == [('C', '2')]
 
     state = {'A': '1'}
-    assert (map_coloring_test.actions(state) == [('C', '2'), ('C', '3')] or
-            map_coloring_test.actions(state) == [('B', '2'), ('B', '3')])
+    assert map_coloring_test.actions(state) in [
+        [('C', '2'), ('C', '3')],
+        [('B', '2'), ('B', '3')],
+    ]
 
 
 def test_csp_result():
@@ -168,7 +170,7 @@ def test_csp_conflicted_vars():
 
     conflicted_vars = map_coloring_test.conflicted_vars(current)
 
-    assert (conflicted_vars == ['B', 'C'] or conflicted_vars == ['C', 'B'])
+    assert conflicted_vars in [['B', 'C'], ['C', 'B']]
 
 
 def test_revise():
@@ -183,7 +185,7 @@ def test_revise():
     removals = []
 
     assert revise(csp, Xi, Xj, removals) is False
-    assert len(removals) == 0
+    assert not removals
 
     domains = {'A': [0, 1, 2, 3, 4], 'B': [0, 1, 2, 3, 4]}
     csp = CSP(variables=None, domains=domains, neighbors=neighbors, constraints=constraints)
@@ -208,8 +210,10 @@ def test_AC3():
     csp = CSP(variables=None, domains=domains, neighbors=neighbors, constraints=constraints)
 
     assert AC3(csp, removals=removals) is True
-    assert (removals == [('A', 1), ('A', 3), ('B', 1), ('B', 3)] or
-            removals == [('B', 1), ('B', 3), ('A', 1), ('A', 3)])
+    assert removals in [
+        [('A', 1), ('A', 3), ('B', 1), ('B', 3)],
+        [('B', 1), ('B', 3), ('A', 1), ('A', 3)],
+    ]
 
 
 def test_first_unassigned_variable():
@@ -218,8 +222,7 @@ def test_first_unassigned_variable():
     assert first_unassigned_variable(assignment, map_coloring_test) == 'C'
 
     assignment = {'B': '1'}
-    assert (first_unassigned_variable(assignment, map_coloring_test) == 'A' or
-            first_unassigned_variable(assignment, map_coloring_test) == 'C')
+    assert first_unassigned_variable(assignment, map_coloring_test) in ['A', 'C']
 
 
 def test_num_legal_values():
@@ -249,8 +252,7 @@ def test_mrv():
     domains = {'A': [0, 1, 2, 3, 4], 'B': [0, 1, 2, 3, 4], 'C': [0, 1, 2, 3, 4]}
     csp = CSP(variables=None, domains=domains, neighbors=neighbors, constraints=constraints)
 
-    assert (mrv(assignment, csp) == 'B' or
-            mrv(assignment, csp) == 'C')
+    assert mrv(assignment, csp) in ['B', 'C']
 
     domains = {'A': [0, 1, 2, 3, 4], 'B': [0, 1, 2, 3, 4, 5, 6], 'C': [0, 1, 2, 3, 4]}
     csp = CSP(variables=None, domains=domains, neighbors=neighbors, constraints=constraints)
@@ -360,7 +362,7 @@ def test_topological_sort():
     Sort, Parents = topological_sort(australia,root)
 
     assert Sort == ['NT','SA','Q','NSW','V','WA']
-    assert Parents['NT'] == None
+    assert Parents['NT'] is None
     assert Parents['SA'] == 'NT'
     assert Parents['Q'] == 'SA'
     assert Parents['NSW'] == 'Q'
